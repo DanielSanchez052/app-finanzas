@@ -1,0 +1,30 @@
+# Dependencias (si en el futuro se agregan)
+node_modules/
+
+# Build / dist (por si se empaqueta luego)
+dist/
+build/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Backups locales (NO versionar datos personales)
+*.json
+backup-*.json
+
+# Entornos
+.env
+.env.local
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
