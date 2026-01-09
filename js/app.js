@@ -22,6 +22,19 @@ async function bootstrap() {
     budgetsArray.map(b => [b.category, b.amount])
   );
 
+  const banner = document.getElementById("privacy-banner");
+  const acceptBtn = document.getElementById("privacy-accept");
+
+  if (localStorage.getItem("privacyAccepted")) {
+    banner.style.display = "none";
+  }
+
+  acceptBtn?.addEventListener("click", () => {
+    localStorage.setItem("privacyAccepted", "true");
+    banner.style.display = "none";
+  });
+
+
   refresh();
 }
 
