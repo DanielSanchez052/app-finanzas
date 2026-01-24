@@ -10,6 +10,10 @@ export function getSpentByCategory(category) {
     .reduce((sum, e) => sum + e.amount, 0);
 }
 
+export function getBudgetTotal() {
+  return Object.values(state.budgets).reduce((sum, e) => sum + e, 0)
+}
+
 export function getBudgetStatus(category) {
   const budget = getBudget(category);
   const spent = getSpentByCategory(category);

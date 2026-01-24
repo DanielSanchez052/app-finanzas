@@ -1,7 +1,8 @@
 import { state } from "../../core/state.js";
-import { getBudget, getSpentByCategory, getBudgetStatus } from "../../core/budgets.js";
+import { getBudget, getSpentByCategory, getBudgetStatus, getBudgetTotal } from "../../core/budgets.js";
 import { notify } from "../../core/events.js";
 import { saveBudget } from "../../core/persistence/repository.js";
+import { formatMoney } from "../../core/utils.js";
 
 export function renderBudgets(container) {
   const categories = [...new Set(state.expenses.map(e => e.category))];
@@ -21,18 +22,26 @@ export function renderBudgets(container) {
     const status = getBudgetStatus(cat);
 
     return `
-          <tr class="${status.key}">
-            <td>${cat}</td>
-            <td>
-              <input type="number" data-cat="${cat}" value="${budget || ""}" />
-            </td>
-            <td>$${spent.toLocaleString("es-CO")}</td>
-            <td>${status.label}</td>
-          </tr>
-        `;
+              <tr class="${status.key}">
+                <td>${cat}</td>
+                <td>
+                  <input type="number" data-cat="${cat}" value="${budget || ""}" />
+                </td>
+                <td>$${spent.toLocaleString("es-CO")}</td>
+                <td>${status.label}</td>
+              </tr>
+            `;
   }).join("")}
-    </table>
-  `;
+              <tr class="last-key-999">
+                <td>Total presupuestos: </td>
+                <td class>
+                  ${formatMoney(getBudgetTotal())} $
+                </td>
+                <td></td>
+                <td>Ok</td>
+              </tr>
+        </table>
+      `;
 
   container.querySelectorAll("input").forEach(input => {
     input.addEventListener("change", e => {
