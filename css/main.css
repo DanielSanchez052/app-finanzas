@@ -256,3 +256,38 @@ table.transactions td.muted {
   color: var(--muted);
   text-align: center;
 }
+
+.settings-section {
+  margin-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 12px;
+}
+ 
+.settings-group {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-backup-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Desktop / pantallas anchas */
+@media (min-width: 900px) {
+  .settings-backup-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .settings-backup-row .settings-section {
+    flex: 1;
+  }
+}
+ 
+/* .settings-group button {
+
+} */
