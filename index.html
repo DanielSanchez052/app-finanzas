@@ -31,7 +31,7 @@
     <button data-tab="register">Registro</button>
     <button data-tab="budgets">Presupuestos</button>
     <button data-tab="analysis">Análisis</button>
-    <button data-tab="backup">Backup</button>
+    <button data-tab="settings">Configuracion</button>
   </nav>
 
   <section id="dashboard" class="card" data-tab-content="dashboard"></section>
@@ -68,7 +68,7 @@
     <div id="analysis-transactions"></div>
   </section>
 
-  <section id="backup" class="card" data-tab-content="backup"></section>
+  <section id="settings" class="card" data-tab-content="settings"></section>
 
   <footer class="footer">
     <span>
@@ -76,7 +76,9 @@
       Tus datos nunca salen de tu dispositivo.
     </span>
   </footer>
-
+  
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 
