@@ -1,8 +1,7 @@
 import cloud from "../../core/persistence/cloud/index.js";
 
 export function renderStorageSettings(container){
-  container.insertAdjacentHTML("beforeend", 
-    ` 
+  container.innerHTML = `
     <br />
     <h2>Persistencia Datos</h2>
 
@@ -13,8 +12,7 @@ export function renderStorageSettings(container){
         <option value="google-drive">Google Drive</option>
       </select>
     </div>
-    `
-  );
+    `;
 
   const storageMedium = document.getElementById("storage-medium");
 

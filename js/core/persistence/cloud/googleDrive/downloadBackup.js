@@ -1,21 +1,17 @@
 import ensureAuthenticated from "./authenticate.js";
-
-async function findExistingBackupFile() {
-  const res = await window.gapi.client.drive.files.list({
-    q: "name = 'app-finanzas-backup.json' and trashed = false",
-    fields: "files(id, name)"
-  });
-
-  const files = res.result && res.result.files ? res.result.files : [];
-  return files[0] || null;
-}
+import { findAppFolder, findLatestYearFile } from "./utils.js";
 
 export default async function downloadBackup() {
   await ensureAuthenticated();
 
-  const file = await findExistingBackupFile();
+  const folder = await findAppFolder();
+  if (!folder) {
+    throw new Error("No se encontró la carpeta 'app-finanzas' en Google Drive.");
+  }
+
+  const file = await findLatestYearFile(folder.id);
   if (!file) {
-    throw new Error("No se encontró backup en Google Drive.");
+    throw new Error("No se encontró ningún backup en la carpeta 'app-finanzas'.");
   }
 
   const res = await window.gapi.client.drive.files.get({

@@ -1,4 +1,4 @@
-import { exportJSON, exportCSV, importJSON } from "../../core/export.js";
+import backup from "../../core/backup/index.js";
 import { state } from "../../core/state.js";
 import {
   addExpense,
@@ -8,6 +8,8 @@ import {
 import { notify } from "../../core/events.js";
 import { clearDatabase } from "../../core/persistence/repository.js";
 import cloud from "../../core/persistence/cloud/index.js";
+
+//TODO: update cloud backup and add a select with cloud providers for backup with 2 button save and restore 
 
 export function renderBackup(container) {
   container.innerHTML = `
@@ -19,17 +21,30 @@ export function renderBackup(container) {
       <p style="font-size:0.9em; color:#aaa;">
         Guarda y restaura tus datos manualmente en tu dispositivo.
       </p>
- 
+
       <div class="settings-group">
-        <button id="export-json">Descargar backup completo (JSON)</button>
+        <label for="backup-format" style="font-size:0.9em;">Formato:</label>
+        <select id="backup-format" style="width: 100%;">
+          <option value="json" selected>json</option>
+          <option value="csv">csv</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <label for="backup-data" style="font-size:0.9em;">Data:</label>
+        <select id="backup-data" style="width: 100%;">
+          <option value="all" selected>Todos</option>
+          <option value="expenses">Solo gastos</option>
+          <option value="incomes">Solo ingresos</option>
+          <option value="budgets">Solo presupuestos</option>
+        </select>
+      </div>
+      
+      <div class="settings-group">
+        <button id="export">Exportar</button>
       </div>
  
-      <div class="settings-group">
-        <button id="export-incomes">Exportar ingresos (CSV)</button>
-        <button id="export-expenses">Exportar gastos (CSV)</button>
-      </div>
- 
-      <div class="settings-group" style="margin-top:8px;">
+      <div class="settings-group" style="margin-top:15px;">
         <label for="import-json" style="font-size:0.9em;">Restaurar desde archivo JSON:</label>
         <input type="file" id="import-json" accept=".json" />
       </div>
@@ -38,7 +53,7 @@ export function renderBackup(container) {
     <section class="settings-section">
       <h3>Backup en la nube</h3>
       <p style="font-size:0.9em; color:#aaa;">
-        Usa el proveedor configurado en la sección de Persistencia de Datos.
+        Usa el proveedor configurado en la sección de Persistencia de datos para guardar un backup completo de tus datos.
       </p>
  
       <div class="settings-group">
@@ -61,39 +76,25 @@ export function renderBackup(container) {
     </div>
   </section>
 `;
-  document.getElementById("export-json").onclick = exportJSON;
-  document.getElementById("export-incomes").onclick = () =>
-    exportCSV("incomes");
-  document.getElementById("export-expenses").onclick = () =>
-    exportCSV("expenses");
+
+
+  document.getElementById("export").onclick = () => {
+    const backupFormatElement = document.getElementById("backup-format");
+    const backupFormat = backupFormatElement.value || "json";
+
+    const backupDataElement = document.getElementById("backup-data");
+    const backupData = backupDataElement.value || "";
+    
+    backup.exportData(backupFormat, backupData).download();
+  } 
 
   document.getElementById("import-json").onchange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    importJSON(file, (data) => {
-      state.incomes = data.incomes;
-      state.expenses = data.expenses;
-      state.budgets = data.budgets;
-
-      data.incomes.forEach((income) => {
-        addIncome(income);
-      });
-
-      data.expenses.forEach((expense) => {
-        addExpense(expense);
-      });
-
-      Object.entries(data.budgets).forEach(([key, value]) => {
-        saveBudget({
-          category: key,
-          amount: Number(value),
-        });
-      });
-
-      notify();
-      alert("Backup restaurado correctamente");
-    });
+    backup.importData(file, "json", "all");
+    notify();
+    alert("Backup restaurado correctamente");
   };
 
   const applyBackupData = (data) => {
