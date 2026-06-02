@@ -1,29 +1,31 @@
 import ensureAuthenticated from "./authenticate.js";
+import { findOrCreateAppFolder, findExistingYearFile } from "./utils.js";
 
-async function findExistingBackupFile() {
-  const res = await window.gapi.client.drive.files.list({
-    q: "name = 'app-finanzas-backup.json' and trashed = false",
-    fields: "files(id, name)"
-  });
-
-  const files = res.result && res.result.files ? res.result.files : [];
-  return files[0] || null;
-}
 
 export default async function uploadBackup(backupJson) {
   await ensureAuthenticated();
 
-  const existingFile = await findExistingBackupFile();
+  const folderId = await findOrCreateAppFolder();
+  const year = new Date().getFullYear();
+  const fileName = `backup-${year}.json`;
+  const existingFile = await findExistingYearFile(folderId, fileName);
   const content = JSON.stringify(backupJson);
 
   const boundary = "-------314159265358979323846";
   const delimiter = "\r\n--" + boundary + "\r\n";
   const closeDelimiter = "\r\n--" + boundary + "--";
 
+
+  const isUpdate = !!existingFile;
+
   const metadata = {
-    name: "app-finanzas-backup.json",
+    name: fileName,
     mimeType: "application/json"
-  };
+  }
+
+  if (!isUpdate) {
+    metadata.parents = [folderId]
+  }
 
   const multipartRequestBody =
     delimiter +
@@ -34,11 +36,11 @@ export default async function uploadBackup(backupJson) {
     content +
     closeDelimiter;
 
-  const path = existingFile
+  const path = isUpdate
     ? "/upload/drive/v3/files/" + existingFile.id
     : "/upload/drive/v3/files";
-
-  const method = existingFile ? "PATCH" : "POST";
+  
+  const method = isUpdate ? "PATCH" : "POST";
 
   await window.gapi.client.request({
     path,
