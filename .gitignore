@@ -1,5 +1,6 @@
 # Dependencias (si en el futuro se agregan)
 node_modules/
+package-lock.json
 
 # Build / dist (por si se empaqueta luego)
 dist/
