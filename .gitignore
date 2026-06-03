@@ -5,12 +5,18 @@ node_modules/
 dist/
 build/
 
+# generated types
+.astro/
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Archivos temporales
 *.tmp
@@ -28,3 +34,10 @@ backup-*.json
 .vscode/
 .idea/
 *.swp
+
+# environment variables
+.env
+.env.production
+
+# jetbrains setting folder
+.idea/
