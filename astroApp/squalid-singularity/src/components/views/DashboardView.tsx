@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAppContext } from "../../context/AppContext";
-import { calculateAlerts } from "../../core/alerts.js";
-import { getBudgetStatus, getSpentByCategory } from "../../core/budgets.js";
+import { calculateAlerts } from "../../core/domain/alerts";
+import { getTopBudgets } from "../../core/domain/budgets";
 import { MonthlySummary } from "../dashboard/MonthlySummary";
 import { AlertsList } from "../dashboard/AlertsList";
 import { TopBudgetsList } from "../dashboard/TopBudgetsList";
@@ -25,7 +25,7 @@ export default function DashboardView() {
       );
       const savings = totalIncome - totalExpenses;
 
-      const alerts = calculateAlerts();
+      const alerts = calculateAlerts(state as any);
 
       const recentTransactions = [...incomesMonth, ...expensesMonth]
         .map((t: any) => ({
@@ -39,19 +39,8 @@ export default function DashboardView() {
         })
         .slice(0, 5);
 
-    
-    const topBudgets = 
-    state.budgets?.length > 0
-      ? (state.budgets
-        .map((b: any) => {
-          const spent = getSpentByCategory(b.category) || 0;
-          const status = getBudgetStatus(b.category);
-          return { ...b, spent, status };
-        })
-        .sort((a, b) => b.spent - a.spent)
-        .slice(0, 4))
-      : [];
-      
+      const topBudgets = getTopBudgets(state as any, 4);
+
       return { totalIncome, totalExpenses, savings, alerts, recentTransactions, topBudgets };
     }, [state]);
 

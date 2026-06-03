@@ -25,8 +25,8 @@ export const MonthlySummary: FC<MonthlySummaryProps> = ({
           <div className="text-xs text-slate-400 mb-1">Ingresos</div>
           <div className="text-emerald-400 text-lg font-semibold">
             {totalIncome.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
             })}
           </div>
         </div>
@@ -34,8 +34,8 @@ export const MonthlySummary: FC<MonthlySummaryProps> = ({
           <div className="text-xs text-slate-400 mb-1">Gastos</div>
           <div className="text-red-400 text-lg font-semibold">
             {totalExpenses.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
             })}
           </div>
         </div>
@@ -47,8 +47,8 @@ export const MonthlySummary: FC<MonthlySummaryProps> = ({
             }`}
           >
             {savings.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
             })}
           </div>
         </div>

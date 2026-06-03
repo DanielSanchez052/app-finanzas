@@ -1,4 +1,4 @@
-import React from "react";
+import "../../core/bootstrap";
 import { AppProvider, useAppContext } from "../../context/AppContext";
 import BudgetsView from "../views/BudgetsView";
 import DashboardView from "../views/DashboardView";

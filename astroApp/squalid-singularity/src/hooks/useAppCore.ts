@@ -1,18 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { state as coreState } from "../core/state.js";
-import { subscribe, notify } from "../core/events.js";
-import backup from "../core/backup/index.js";
-import cloud from "../core/persistence/cloud/index.js";
-import {
-  initRepository,
-  getIncomes,
-  getExpenses,
-  getBudgets,
-  addIncome as repoAddIncome,
-  addExpense as repoAddExpense,
-  saveBudget as repoSaveBudget
-} from "../core/persistence/repository.js";
-import type { CoreState, CoreActions, BackupAPI, CloudAPI, Budget } from "../context/AppContext";
+import type { CoreState, CoreActions, BackupAPI, CloudAPI } from "../context/AppContext";
+import type { AppCore, NewIncomeInput, NewExpenseInput } from "../core/app/appCore";
 
 interface UseAppCoreResult {
   initialized: boolean;
@@ -21,42 +9,33 @@ interface UseAppCoreResult {
   backup: BackupAPI;
   cloud: CloudAPI;
 }
+// === Inyección de AppCore ===
 
-function readCoreState(): CoreState {
-  return {
-    currentMonth: coreState.currentMonth || new Date().toISOString().slice(0, 7),
-    incomes: coreState.incomes || [],
-    expenses: coreState.expenses || [],
-    // budgets: Object.entries(coreState.budgets || {}).map(([category, amount]) => ({ category, amount: Number(amount) }))
-    budgets: coreState.budgets as Budget[] || []
-  };
+let appCoreInstance: AppCore | null = null;
+
+export function setAppCoreInstance(instance: AppCore) {
+  appCoreInstance = instance;
+}
+
+function getAppCore(): AppCore {
+  if (!appCoreInstance) {
+    throw new Error("AppCore instance no inicializada. Llama a setAppCoreInstance antes de usar useAppCore.");
+  }
+  return appCoreInstance;
 }
 
 export function useAppCore(): UseAppCoreResult {
+  const appCore = getAppCore();
+
   const [initialized, setInitialized] = useState(false);
-  const [snapshot, setSnapshot] = useState<CoreState>(() => readCoreState());
+  const [snapshot, setSnapshot] = useState<CoreState>(() => appCore.getState());
 
   useEffect(() => {
     let cancelled = false;
 
     async function bootstrap() {
       try {
-        // 1) Inicializar IndexedDB
-        await initRepository();
-
-        // 2) Cargar datos persistidos y volcarlos al state del core
-        const [incomes, expenses, budgets] = await Promise.all([
-          getIncomes(),
-          getExpenses(),
-          getBudgets()
-        ]);
-
-        coreState.incomes = incomes || [];
-        coreState.expenses = expenses || [];
-        coreState.budgets = budgets || [];
-        // 3) Notificar a los suscriptores (incluido este hook) para refrescar el snapshot
-        notify();
-
+        await appCore.initialize();
         if (!cancelled) {
           setInitialized(true);
         }
@@ -68,79 +47,81 @@ export function useAppCore(): UseAppCoreResult {
       }
     }
 
-    // Suscribirse a cambios del core
-    const listener = () => {
+    const unsubscribe = appCore.subscribe(state => {
       if (cancelled) return;
-      setSnapshot(readCoreState());
-    };
+      setSnapshot(state);
+    });
 
-    subscribe(listener);
     bootstrap();
 
     return () => {
-      // El core no expone unsubscribe, pero evitamos actualizar estado si el hook se desmonta
       cancelled = true;
+      unsubscribe();
     };
-  }, []);
+  }, [appCore]);
 
   const actions: CoreActions = useMemo(
     () => ({
-      async addIncome(income: any) {
-        await repoAddIncome(income);
-        const currentIncomes = (coreState.incomes as any[]) || [];
-        coreState.incomes = [...currentIncomes, income];
-        notify();
+      async addIncome(input: NewIncomeInput) {
+        await appCore.addIncome(input);
       },
-      async addExpense(expense: any) {
-        await repoAddExpense(expense);
-        const currentExpenses = (coreState.expenses as any[]) || [];
-        coreState.expenses = [...currentExpenses, expense];
-        notify();
+      async addExpense(input: NewExpenseInput) {
+        await appCore.addExpense(input);
       },
       async saveBudget(budget: { category: string; amount: number }) {
-        await repoSaveBudget(budget);
-
-        const currentBudgets = (coreState.budgets as Budget[]) || [];
-        coreState.budgets = [
-          ...currentBudgets,
-          { category: budget.category, amount: budget.amount }
-        ];
-
-
-
-        notify();
+        await appCore.saveBudget(budget);
       },
       setCurrentMonth(month: string) {
-        coreState.currentMonth = month;
-        notify();
+        appCore.setCurrentMonth(month);
+      },
+      async clearLocalData() {
+        await appCore.clearLocalData();
       }
     }),
-    []
+    [appCore]
   );
 
   const backupApi: BackupAPI = useMemo(
     () => ({
-      // Delegamos directamente en el módulo backup del core
-      exportData: (format: string, section?: string) =>
-        backup.exportData(format, section ?? "all"),
+      exportData: (format: string, section?: string) => {
+        const blob = appCore.backup.exportData(
+          format as any,
+          (section ?? "all") as any
+        );
+
+        const type = blob.type || "application/json";
+        const filename = `backup-finanzas-${new Date().toISOString()}.${format}`;
+
+        const download = () => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return { content: blob, type, format, download };
+      },
       importData: async (file: File, format: string, section?: string) => {
-        // El módulo backup ya se encarga de mutar state y persistir en IndexedDB.
-        backup.importData(file, format, section ?? "all");
-        // Forzamos re-render de React
-        notify();
+        await appCore.backup.importData(
+          file,
+          format as any,
+          (section ?? "all") as any
+        );
       }
     }),
-    []
+    [appCore]
   );
 
   const cloudApi: CloudAPI = useMemo(
     () => ({
-      authenticate: async (provider: string) => cloud.authenticate(provider),
-      saveOnCloud: async (provider: string, data: any) => cloud.saveOnCloud(provider, data),
-      loadFromCloud: async (provider: string) => cloud.loadFromCloud(provider),
-      cloudProviders: cloud.cloudProviders || []
+      authenticate: async (_provider: string) => appCore.cloud.authenticate(),
+      saveOnCloud: async (_provider: string, _data: any) => appCore.cloud.saveOnCloud(),
+      loadFromCloud: async (_provider: string) => appCore.cloud.loadFromCloud(),
+      cloudProviders: []
     }),
-    []
+    [appCore]
   );
 
   return {

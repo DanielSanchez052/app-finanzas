@@ -1,8 +1,5 @@
 import type { FC } from "react";
-import {
-  getSpentByCategory,
-  getBudgetStatus
-} from "../../core/budgets.js";
+import type { BudgetStatus } from "../../core/domain/types";
 import { BudgetStatusBadge } from "./BudgetStatusBadge";
 
 export interface EditableBudgetRow {
@@ -10,8 +7,13 @@ export interface EditableBudgetRow {
   amount: string;
 }
 
+export interface BudgetRowWithStats extends EditableBudgetRow {
+  spent: number;
+  status: BudgetStatus;
+}
+
 interface BudgetsTableProps {
-  rows: EditableBudgetRow[];
+  rows: BudgetRowWithStats[];
   savingCategory: string | null;
   onChangeRowAmount: (category: string, value: string) => void;
   onSave: (row: EditableBudgetRow) => void;
@@ -37,9 +39,6 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
         </thead>
         <tbody>
           {rows.map(row => {
-            const spent = getSpentByCategory(row.category) || 0;
-            const status = getBudgetStatus(row.category);
-
             return (
               <tr key={row.category} className="border-b border-slate-850 last:border-0">
                 <td className="py-2 pr-3 align-middle text-slate-100">
@@ -55,13 +54,13 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
                   />
                 </td>
                 <td className="py-2 px-3 align-middle text-right text-slate-200">
-                  {spent.toLocaleString(undefined, {
+                  {row.spent.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   })}
                 </td>
                 <td className="py-2 px-3 align-middle">
-                  <BudgetStatusBadge status={status} />
+                  <BudgetStatusBadge status={row.status} />
                 </td>
                 <td className="py-2 px-3 align-middle text-right">
                   <button

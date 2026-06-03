@@ -15,7 +15,7 @@ import { CloudBackupSection } from "../settings/CloudBackupSection";
 import { DangerZoneSection } from "../settings/DangerZoneSection";
 
 export default function SettingsView() {
-  const { backup, cloud, state } = useAppContext();
+  const { backup, cloud, state, actions } = useAppContext();
 
   const [backupFormat, setBackupFormat] = useState<"json" | "csv">("json");
   const [backupSection, setBackupSection] = useState<"all" | "expenses" | "incomes" | "budgets">("all");
@@ -98,8 +98,15 @@ export default function SettingsView() {
     }
   };
 
-  const handleImportFile = (file: File) => {
-    backup.importData(file, "json", "all");
+  const handleImportFile = async (file: File) => {
+    try {
+      await backup.importData(file, "json", "all");
+      alert("Backup local restaurado correctamente.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al restaurar el backup local. Verifica el archivo seleccionado.");
+      throw err;
+    }
   };
 
   const getSelectedProvider = () => {
@@ -145,15 +152,7 @@ export default function SettingsView() {
 
     try {
       setIsCloudLoading(true);
-      const data = await cloud.loadFromCloud(provider);
-      if (!data || !data.incomes || !data.expenses || !data.budgets) {
-        alert("Backup remoto inválido o incompleto.");
-        return;
-      }
-
-      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-      const file = new File([blob], "backup-remote.json", { type: "application/json" });
-      await backup.importData(file, "json", "all");
+      await cloud.loadFromCloud(provider);
       alert("Backup restaurado desde la nube correctamente.");
     } catch (err) {
       console.error(err);
@@ -174,15 +173,35 @@ export default function SettingsView() {
     );
     if (!confirm2) return;
 
-    // El core original usaba clearDatabase desde repository.js; aquí, por ahora,
-    // dejamos solo un mensaje para no duplicar lógica peligrosa sin UI dedicada.
-    alert(
-      "La limpieza total de la base de datos local se implementará cuando migremos la sección completa de Persistencia de datos."
-    );
+    try {
+      await actions.clearLocalData();
+      alert("Todos los datos locales han sido eliminados correctamente.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al limpiar los datos locales.");
+    }
   };
 
   return (
     <div className="space-y-6">
+      <LocalBackupSection
+        backupFormat={backupFormat}
+        backupSection={backupSection}
+        onBackupFormatChange={setBackupFormat}
+        onBackupSectionChange={setBackupSection}
+        onExport={handleExport}
+        onImport={handleImportFile}
+      />
+
+      <DangerZoneSection onClearLocalData={handleClearLocalData} />
+
+      <CloudBackupSection
+        isCloudSaving={isCloudSaving}
+        isCloudLoading={isCloudLoading}
+        onCloudSave={handleCloudSave}
+        onCloudLoad={handleCloudLoad}
+      />
+
       <CloudPersistenceSection
         storageProvider={storageProvider}
         storageStatus={storageStatus}
@@ -281,24 +300,7 @@ export default function SettingsView() {
           }
         }}
       />
-
-      <LocalBackupSection
-        backupFormat={backupFormat}
-        backupSection={backupSection}
-        onBackupFormatChange={setBackupFormat}
-        onBackupSectionChange={setBackupSection}
-        onExport={handleExport}
-        onImport={handleImportFile}
-      />
-
-      <CloudBackupSection
-        isCloudSaving={isCloudSaving}
-        isCloudLoading={isCloudLoading}
-        onCloudSave={handleCloudSave}
-        onCloudLoad={handleCloudLoad}
-      />
-
-      <DangerZoneSection onClearLocalData={handleClearLocalData} />
+      
     </div>
   );
 }

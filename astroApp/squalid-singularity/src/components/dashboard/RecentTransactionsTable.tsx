@@ -74,8 +74,8 @@ export const RecentTransactionsTable: FC<RecentTransactionsTableProps> = ({
                     }`}
                   >
                     {amount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
                     })}
                   </td>
                 </tr>

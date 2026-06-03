@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { BudgetsTable } from "../budgets/BudgetsTable";
-import type { EditableBudgetRow } from "../budgets/BudgetsTable";
+import type { EditableBudgetRow, BudgetRowWithStats } from "../budgets/BudgetsTable";
+import { getSpentByCategory, getBudgetStatus } from "../../core/domain/budgets";
 import { NewBudgetCategoryForm } from "../budgets/NewBudgetCategoryForm";
 
 export default function BudgetsView() {
@@ -57,6 +58,16 @@ export default function BudgetsView() {
     }
   };
 
+  const rowsWithStats: BudgetRowWithStats[] = useMemo(
+    () =>
+      rows.map(row => ({
+        ...row,
+        spent: getSpentByCategory(state as any, row.category),
+        status: getBudgetStatus(state as any, row.category)
+      })),
+    [rows, state]
+  );
+
   const handleAddCategory = async () => {
     const category = newCategory.trim();
     const amount = Number(newAmount.replace(",", "."));
@@ -86,7 +97,7 @@ export default function BudgetsView() {
           Define un monto máximo de gasto por categoría y revisa cuánto has gastado este mes.
         </p>
         <BudgetsTable
-          rows={rows}
+          rows={rowsWithStats}
           savingCategory={savingCategory}
           onChangeRowAmount={(category, value) =>
             setRows(prev =>

@@ -20,6 +20,7 @@ export interface CoreActions {
   addExpense: (...args: any[]) => Promise<void>;
   saveBudget: (...args: any[]) => Promise<void>;
   setCurrentMonth: (month: string) => void;
+  clearLocalData: () => Promise<void>;
 }
 
 export interface BackupAPI {
@@ -51,7 +52,8 @@ const defaultValue: AppContextValue = {
     addIncome: async () => {},
     addExpense: async () => {},
     saveBudget: async () => {},
-    setCurrentMonth: () => {}
+    setCurrentMonth: () => {},
+    clearLocalData: async () => {}
   },
   backup: {
     exportData: () => ({}),

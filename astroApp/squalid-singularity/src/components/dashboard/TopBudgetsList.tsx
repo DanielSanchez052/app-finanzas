@@ -37,13 +37,13 @@ export const TopBudgetsList: FC<TopBudgetsListProps> = ({ topBudgets }) => {
                 </div>
                 <div className="text-[11px] text-slate-400">
                   {b.spent.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                   })}
                   {" / "}
                   {b.amount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                   })}
                 </div>
               </div>

@@ -9,7 +9,7 @@ interface LocalBackupSectionProps {
     value: "all" | "expenses" | "incomes" | "budgets"
   ) => void;
   onExport: () => void;
-  onImport: (file: File) => void;
+  onImport: (file: File) => Promise<void> | void;
 }
 
 export const LocalBackupSection: FC<LocalBackupSectionProps> = ({
@@ -33,12 +33,22 @@ export const LocalBackupSection: FC<LocalBackupSectionProps> = ({
     );
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setSelectedFileName(file.name);
-    onImport(file);
+
+    try {
+      await onImport(file);
+
+      setSelectedFileName("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
