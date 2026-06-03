@@ -22,6 +22,27 @@ export default function SettingsView() {
   const [storageStatus, setStorageStatus] = useState<string>("");
   const [storageStatusOk, setStorageStatusOk] = useState(false);
 
+  // TODO: change this to use a more secure way to load the scripts
+  useEffect(() => {
+    const urls = [
+      "https://accounts.google.com/gsi/client",
+      "https://apis.google.com/js/api.js"
+    ];
+ 
+    const scripts = urls.map(src => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.defer = true;
+      document.head.appendChild(s);
+      return s;
+    });
+ 
+    return () => {
+      scripts.forEach(s => document.head.removeChild(s));
+    };
+  }, []);
+
   useEffect(() => {
     // Inicializar selector de proveedor desde core/localStorage
     const savedProvider = coreGetSelectedProvider();
