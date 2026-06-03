@@ -1,15 +1,21 @@
 import type { ChangeEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import {
   getSelectedProvider as coreGetSelectedProvider,
   setSelectedProvider as coreSetSelectedProvider
 } from "../../core/persistence/cloud/index.js";
-import { getProviderConfig, setProviderConfig } from "../../core/persistence/cloud/googleDrive/config.js";
+import {
+  getProviderConfig,
+  setProviderConfig
+} from "../../core/persistence/cloud/googleDrive/config.js";
+import { CloudPersistenceSection } from "../settings/CloudPersistenceSection";
+import { LocalBackupSection } from "../settings/LocalBackupSection";
+import { CloudBackupSection } from "../settings/CloudBackupSection";
+import { DangerZoneSection } from "../settings/DangerZoneSection";
 
 export default function SettingsView() {
   const { backup, cloud, state } = useAppContext();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [backupFormat, setBackupFormat] = useState<"json" | "csv">("json");
   const [backupSection, setBackupSection] = useState<"all" | "expenses" | "incomes" | "budgets">("all");
@@ -92,10 +98,7 @@ export default function SettingsView() {
     }
   };
 
-  const handleImportChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleImportFile = (file: File) => {
     backup.importData(file, "json", "all");
   };
 
@@ -180,283 +183,122 @@ export default function SettingsView() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-slate-900/60 border border-slate-800 rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-1">Persistencia de datos</h2>
-        <p className="text-xs text-slate-400 mb-4">
-          Selecciona y configura un proveedor de almacenamiento en la nube.
-        </p>
+      <CloudPersistenceSection
+        storageProvider={storageProvider}
+        storageStatus={storageStatus}
+        storageStatusOk={storageStatusOk}
+        googleClientId={googleClientId}
+        googleApiKey={googleApiKey}
+        onProviderChange={value => {
+          setStorageProvider(value);
+          coreSetSelectedProvider(value);
 
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <label className="block text-xs text-slate-300">Almacenamiento</label>
-            <select
-              className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm max-w-xs"
-              value={storageProvider}
-              onChange={e => {
-                const value = e.target.value;
-                setStorageProvider(value);
-                coreSetSelectedProvider(value);
+          if (value === "none") {
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem("googleDriveAccountEmail");
+            }
+            setStorageStatus("Persistencia en la nube desactivada.");
+            setStorageStatusOk(false);
+            return;
+          }
 
-                if (value === "none") {
-                  if (typeof window !== "undefined") {
-                    window.localStorage.removeItem("googleDriveAccountEmail");
-                  }
-                  setStorageStatus("Persistencia en la nube desactivada.");
-                  setStorageStatusOk(false);
-                  return;
-                }
+          if (value === "google-drive") {
+            const { clientId, apiKey } = getProviderConfig();
+            const savedEmail =
+              typeof window !== "undefined"
+                ? window.localStorage.getItem("googleDriveAccountEmail") || ""
+                : "";
 
-                if (value === "google-drive") {
-                  const { clientId, apiKey } = getProviderConfig();
-                  const savedEmail =
-                    typeof window !== "undefined"
-                      ? window.localStorage.getItem("googleDriveAccountEmail") || ""
-                      : "";
+            if (clientId) setGoogleClientId(clientId);
+            if (apiKey) setGoogleApiKey(apiKey);
 
-                  if (clientId) setGoogleClientId(clientId);
-                  if (apiKey) setGoogleApiKey(apiKey);
+            if (clientId && apiKey && savedEmail) {
+              setStorageStatus(`Conectado a Google Drive como ${savedEmail}.`);
+              setStorageStatusOk(true);
+            } else if (clientId && apiKey) {
+              setStorageStatus(
+                "Google Drive configurado. Puedes autenticar para vincular una cuenta."
+              );
+              setStorageStatusOk(true);
+            } else {
+              setStorageStatus(
+                "Seleccionado Google Drive, pero faltan credenciales."
+              );
+              setStorageStatusOk(false);
+            }
+          } else {
+            setStorageStatus(`Proveedor "${value}" seleccionado.`);
+            setStorageStatusOk(true);
+          }
+        }}
+        onGoogleClientIdChange={setGoogleClientId}
+        onGoogleApiKeyChange={setGoogleApiKey}
+        onConfigureProvider={async () => {
+          const value = storageProvider;
+          if (value === "none") {
+            alert("Primero selecciona un proveedor de almacenamiento.");
+            return;
+          }
 
-                  if (clientId && apiKey && savedEmail) {
-                    setStorageStatus(`Conectado a Google Drive como ${savedEmail}.`);
-                    setStorageStatusOk(true);
-                  } else if (clientId && apiKey) {
-                    setStorageStatus(
-                      "Google Drive configurado. Puedes autenticar para vincular una cuenta."
-                    );
-                    setStorageStatusOk(true);
-                  } else {
-                    setStorageStatus(
-                      "Seleccionado Google Drive, pero faltan credenciales."
-                    );
-                    setStorageStatusOk(false);
-                  }
-                } else {
-                  setStorageStatus(`Proveedor "${value}" seleccionado.`);
-                  setStorageStatusOk(true);
-                }
-              }}
-            >
-              <option value="none">Ninguno</option>
-              <option value="google-drive">Google Drive</option>
-              <option value="s3">S3</option>
-            </select>
-          </div>
+          if (value === "google-drive") {
+            const clientId = googleClientId.trim();
+            const apiKey = googleApiKey.trim();
 
-          {storageProvider === "google-drive" && (
-            <div className="mt-3 space-y-3 border-t border-slate-800 pt-3">
-              <h3 className="text-sm font-medium">Configuración Google Drive</h3>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <label className="block text-xs text-slate-300">Client ID</label>
-                  <input
-                    type="text"
-                    value={googleClientId}
-                    onChange={e => setGoogleClientId(e.target.value)}
-                    placeholder="tu-client-id.apps.googleusercontent.com"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs text-slate-300">API Key</label>
-                  <input
-                    type="text"
-                    value={googleApiKey}
-                    onChange={e => setGoogleApiKey(e.target.value)}
-                    placeholder="tu API key"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            if (!clientId || !apiKey) {
+              alert("Para usar Google Drive debes indicar Client ID y API Key.");
+              setStorageStatus("Falta configurar credenciales de Google Drive.");
+              setStorageStatusOk(false);
+              return;
+            }
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
-            <div
-              className={`text-xs ${
-                storageStatusOk ? "text-emerald-400" : "text-slate-400"
-              }`}
-            >
-              {storageStatus}
-            </div>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={async () => {
-                const value = storageProvider;
-                if (value === "none") {
-                  alert("Primero selecciona un proveedor de almacenamiento.");
-                  return;
-                }
+            setProviderConfig({ clientId, apiKey });
 
-                if (value === "google-drive") {
-                  const clientId = googleClientId.trim();
-                  const apiKey = googleApiKey.trim();
+            try {
+              const result = await cloud.authenticate("google-drive");
+              const email = result?.user?.email || "desconocido";
 
-                  if (!clientId || !apiKey) {
-                    alert(
-                      "Para usar Google Drive debes indicar Client ID y API Key."
-                    );
-                    setStorageStatus(
-                      "Falta configurar credenciales de Google Drive."
-                    );
-                    setStorageStatusOk(false);
-                    return;
-                  }
-
-                  setProviderConfig({ clientId, apiKey });
-
-                  try {
-                    const result = await cloud.authenticate("google-drive");
-                    const email = result?.user?.email || "desconocido";
-
-                    if (typeof window !== "undefined") {
-                      window.localStorage.setItem("googleDriveAccountEmail", email);
-                    }
-
-                    setStorageStatus(
-                      `Conectado a Google Drive como ${email}.`
-                    );
-                    setStorageStatusOk(true);
-                    alert(
-                      `Google Drive configurado y autenticado correctamente para ${email}.`
-                    );
-                  } catch (err) {
-                    console.error(err);
-                    setStorageStatus("Error al autenticar con Google Drive.");
-                    setStorageStatusOk(false);
-                    alert(
-                      "Error al autenticar con Google Drive. Revisa tus credenciales y permisos."
-                    );
-                  }
-                } else {
-                  alert(
-                    `Configuración específica para el proveedor "${value}" aún no está implementada.`
-                  );
-                }
-              }}
-              className="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded bg-slate-700 hover:bg-slate-600 text-white self-start"
-            >
-              Configurar proveedor
-            </button>
-          </div>
-        </div>
-      </section>
-      <section className="bg-slate-900/60 border border-slate-800 rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-1">Backup local</h2>
-        <p className="text-xs text-slate-400 mb-4">
-          Guarda y restaura tus datos manualmente en tu dispositivo.
-        </p>
-
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="block text-xs text-slate-300">Formato</label>
-            <select
-              className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
-              value={backupFormat}
-              onChange={e => setBackupFormat(e.target.value as "json" | "csv")}
-            >
-              <option value="json">json</option>
-              <option value="csv">csv</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-xs text-slate-300">Data</label>
-            <select
-              className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
-              value={backupSection}
-              onChange={e =>
-                setBackupSection(
-                  e.target.value as "all" | "expenses" | "incomes" | "budgets"
-                )
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem("googleDriveAccountEmail", email);
               }
-            >
-              <option value="all">Todos</option>
-              <option value="expenses">Solo gastos</option>
-              <option value="incomes">Solo ingresos</option>
-              <option value="budgets">Solo presupuestos</option>
-            </select>
-          </div>
-        </div>
 
-        <div className="mt-4 flex flex-col gap-4">
-          <div>
-            <button
-              type="button"
-              onClick={handleExport}
-              className="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded bg-emerald-600 hover:bg-emerald-500 text-white"
-            >
-              Exportar backup
-            </button>
-          </div>
+              setStorageStatus(`Conectado a Google Drive como ${email}.`);
+              setStorageStatusOk(true);
+              alert(
+                `Google Drive configurado y autenticado correctamente para ${email}.`
+              );
+            } catch (err) {
+              console.error(err);
+              setStorageStatus("Error al autenticar con Google Drive.");
+              setStorageStatusOk(false);
+              alert(
+                "Error al autenticar con Google Drive. Revisa tus credenciales y permisos."
+              );
+            }
+          } else {
+            alert(
+              `Configuración específica para el proveedor "${value}" aún no está implementada.`
+            );
+          }
+        }}
+      />
 
-          <div className="border border-dashed border-slate-700 rounded-md p-3 bg-slate-950/60">
-            <h3 className="text-xs font-semibold text-slate-200 mb-1">
-              Restaurar backup local
-            </h3>
-            <p className="text-[11px] text-slate-400 mb-2">
-              Sube un archivo <span className="font-mono">.json</span> generado por esta misma app para restaurar tus datos.
-            </p>
+      <LocalBackupSection
+        backupFormat={backupFormat}
+        backupSection={backupSection}
+        onBackupFormatChange={setBackupFormat}
+        onBackupSectionChange={setBackupSection}
+        onExport={handleExport}
+        onImport={handleImportFile}
+      />
 
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <span className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded bg-slate-800 hover:bg-slate-700 text-slate-50 border border-slate-600">
-                Seleccionar archivo JSON
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {fileInputRef.current?.files?.[0]?.name || "Ningún archivo seleccionado"}
-              </span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleImportChange}
-                className="hidden"
-              />
-            </label>
-          </div>
-        </div>
-      </section>
+      <CloudBackupSection
+        isCloudSaving={isCloudSaving}
+        isCloudLoading={isCloudLoading}
+        onCloudSave={handleCloudSave}
+        onCloudLoad={handleCloudLoad}
+      />
 
-      <section className="bg-slate-900/60 border border-slate-800 rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-1">Backup en la nube</h2>
-        <p className="text-xs text-slate-400 mb-4">
-          Usa el proveedor configurado en la sección de Persistencia de datos para guardar un backup completo de tus datos.
-        </p>
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={handleCloudSave}
-            disabled={isCloudSaving}
-            className="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white"
-          >
-            {isCloudSaving ? "Guardando..." : "Guardar backup en la nube"}
-          </button>
-          <button
-            type="button"
-            onClick={handleCloudLoad}
-            disabled={isCloudLoading}
-            className="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded bg-slate-700 hover:bg-slate-600 disabled:opacity-60 text-white"
-          >
-            {isCloudLoading ? "Restaurando..." : "Restaurar desde la nube"}
-          </button>
-        </div>
-      </section>
-
-      <section className="bg-slate-900/60 border border-red-900 rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-1 text-red-300">Zona de peligro</h2>
-        <p className="text-xs text-red-300/80 mb-4">
-          Esta acción eliminará todos los datos locales de la app. No se puede deshacer.
-        </p>
-
-        <button
-          type="button"
-          onClick={handleClearLocalData}
-          className="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded bg-red-700 hover:bg-red-600 text-white"
-        >
-          Limpiar datos locales (próximamente)
-        </button>
-      </section>
+      <DangerZoneSection onClearLocalData={handleClearLocalData} />
     </div>
   );
 }
