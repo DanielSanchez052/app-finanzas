@@ -13,6 +13,7 @@ interface MovementFormState {
   description: string;
   category: string;
   amount: string;
+  date: string;
 }
 
 function createEmptyForm(type: MovementType): MovementFormState {
@@ -20,19 +21,16 @@ function createEmptyForm(type: MovementType): MovementFormState {
     type,
     description: "",
     category: "",
-    amount: ""
+    amount: "",
+    date: new Date().toISOString().slice(0, 10)
   };
 }
 
 export default function RegisterView() {
   const { state, actions } = useAppContext();
 
-  const [incomeForm, setIncomeForm] = useState<MovementFormState>(
-    createEmptyForm("income")
-  );
-  const [expenseForm, setExpenseForm] = useState<MovementFormState>(
-    createEmptyForm("expense")
-  );
+  const [incomeForm, setIncomeForm] = useState<MovementFormState>(createEmptyForm("income"));
+  const [expenseForm, setExpenseForm] = useState<MovementFormState>(createEmptyForm("expense"));
   const [submitting, setSubmitting] = useState<MovementType | null>(null);
   const [showIncomeForm, setShowIncomeForm] = useState(true);
   const [showExpenseForm, setShowExpenseForm] = useState(true);
@@ -48,15 +46,19 @@ export default function RegisterView() {
       return;
     }
 
+    const date = form.date || new Date().toISOString().slice(0, 10);
+    const month = date.slice(0, 7);
+
     const movement = {
-      id: Date.now(),
+      id: String(Date.now()),
       description: form.description.trim(),
       category: form.category.trim(),
       amount: rawAmount,
-      month: new Date().toISOString().slice(0, 7),
+      month,
+      date,
       createdAt: new Date().toISOString()
     };
-
+    
     try {
       setSubmitting(form.type);
       if (form.type === "income") {
@@ -78,27 +80,29 @@ export default function RegisterView() {
     const incomes = (state.incomes || [])
       .filter((i: any) => i.month === month)
       .map((i: any) => ({
-        id: String(i.id ?? i.createdAt ?? Math.random()),
+        id: String(i.id ?? i.createdAt ?? Date.now()),
         type: "income" as const,
         description: i.description ?? "",
         category: i.category ?? "",
         amount: i.amount ?? 0,
-        date: i.createdAt || i.date || ""
+        date: i.date || i.createdAt || ""
       }));
 
     const expenses = (state.expenses || [])
       .filter((e: any) => e.month === month)
       .map((e: any) => ({
-        id: String(e.id ?? e.createdAt ?? Math.random()),
+        id: String(e.id ?? e.createdAt ?? Date.now()),
         type: "expense" as const,
         description: e.description ?? "",
         category: e.category ?? "",
         amount: e.amount ?? 0,
-        date: e.createdAt || e.date || ""
+        date: e.date || e.createdAt || ""
       }));
 
     return [...incomes, ...expenses].sort((a, b) => b.date.localeCompare(a.date));
   }, [state]);
+
+  // console.log(monthTransactions);
 
   const availableCategories = useMemo(() => {
     const categories = new Set<string>();

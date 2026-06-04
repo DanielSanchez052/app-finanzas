@@ -2,7 +2,7 @@ import type { CoreState, BudgetStatus, TopBudgetItem } from "./types";
 
 export function getSpentByCategory(state: CoreState, category: string): number {
   return state.expenses
-    .filter(e => e.category === category)
+    .filter(e => e.category === category && e.month === state.currentMonth)
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 }
 

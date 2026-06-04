@@ -4,6 +4,7 @@ interface MovementFormShape {
   description: string;
   category: string;
   amount: string;
+  date: string;
 }
 
 interface IncomeFormProps {
@@ -27,6 +28,16 @@ export const IncomeForm: FC<IncomeFormProps> = ({
       </p>
 
       <form className="space-y-3" onSubmit={onSubmit}>
+        <div className="space-y-1">
+          <label className="block text-xs text-slate-300">Fecha</label>
+          <input
+            type="date"
+            value={form.date}
+            onChange={e => onChangeField("date", e.target.value)}
+            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
+          />
+        </div>
+
         <div className="space-y-1">
           <label className="block text-xs text-slate-300">Descripción</label>
           <input

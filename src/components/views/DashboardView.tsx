@@ -33,8 +33,8 @@ export default function DashboardView() {
           kind: t.amount >= 0 && state.incomes.includes(t) ? "income" : "expense"
         }))
         .sort((a, b) => {
-          const da = a.createdAt || a.date || "";
-          const db = b.createdAt || b.date || "";
+          const da = a.date || a.createdAt || "";
+          const db = b.date || b.createdAt || "";
           return db.localeCompare(da);
         })
         .slice(0, 5);

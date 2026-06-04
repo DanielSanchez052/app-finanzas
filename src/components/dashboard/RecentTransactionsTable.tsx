@@ -39,7 +39,7 @@ export const RecentTransactionsTable: FC<RecentTransactionsTableProps> = ({
 
             {recentTransactions.map((t: any, idx: number) => {
               const amount = t.amount || 0;
-              const date = t.createdAt || t.date || "";
+              const date = t.date || t.createdAt || "";
               const formattedDate = date ? date.slice(0, 10) : "";
               const isIncome = t.kind === "income";
 

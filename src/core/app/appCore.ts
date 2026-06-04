@@ -17,6 +17,8 @@ export interface NewMovementInput {
   category: string;
   amount: number;
   type: "income" | "expense";
+  month: string;
+  date: string;
 }
 
 export type NewIncomeInput = Omit<NewMovementInput, "type">;
@@ -99,7 +101,8 @@ export function createAppCore(deps: AppCoreDeps): AppCore {
       description: input.description.trim(),
       category: input.category.trim(),
       amount: input.amount,
-      month: now.toISOString().slice(0, 7),
+      month: input.month,
+      date: input.date,
       createdAt: now.toISOString()
     };
 
