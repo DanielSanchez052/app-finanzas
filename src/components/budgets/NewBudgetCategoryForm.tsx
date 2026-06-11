@@ -26,19 +26,21 @@ export const NewBudgetCategoryForm: FC<NewBudgetCategoryFormProps> = ({
 
       <div className="grid gap-3 md:grid-cols-[2fr,1fr,auto] items-end max-w-xl">
         <div className="space-y-1">
-          <label className="block text-xs text-slate-300">Categoría</label>
+          <label className="block text-xs text-slate-300" htmlFor="new-budget-category">Categoría</label>
           <input
             type="text"
+            id="new-budget-category"
             value={newCategory}
             onChange={e => onChangeCategory(e.target.value)}
             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs text-slate-300">Presupuesto</label>
+          <label className="block text-xs text-slate-300" htmlFor="new-budget-amount">Presupuesto</label>
           <input
             type="number"
             step="0.01"
+            id="new-budget-amount"
             value={newAmount}
             onChange={e => onChangeAmount(e.target.value)}
             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"

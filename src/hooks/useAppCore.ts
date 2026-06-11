@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CoreState, CoreActions, BackupAPI, CloudAPI } from "../context/AppContext";
 import type { AppCore, NewIncomeInput, NewExpenseInput } from "../core/app/appCore";
+import type { Movement } from "../core/domain/types";
 
 interface UseAppCoreResult {
   initialized: boolean;
@@ -67,6 +68,18 @@ export function useAppCore(): UseAppCoreResult {
       },
       async addExpense(input: NewExpenseInput) {
         await appCore.addExpense(input);
+      },
+      async updateIncome(movement: Movement) {
+        await appCore.updateIncome(movement);
+      },
+      async updateExpense(movement: Movement) {
+        await appCore.updateExpense(movement);
+      },
+      async deleteIncome(id: string) {
+        await appCore.deleteIncome(id);
+      },
+      async deleteExpense(id: string) {
+        await appCore.deleteExpense(id);
       },
       async saveBudget(budget: { category: string; amount: number }) {
         await appCore.saveBudget(budget);

@@ -17,6 +17,16 @@ export interface Repository {
   saveExpense(movement: Movement): Promise<void>;
 
   /**
+   * Elimina un ingreso por id.
+   */
+  deleteIncome(id: string): Promise<void>;
+
+  /**
+   * Elimina un gasto por id.
+   */
+  deleteExpense(id: string): Promise<void>;
+
+  /**
    * Crea o actualiza un presupuesto para una categoría.
    */
   saveBudget(budget: Budget): Promise<void>;

@@ -34,10 +34,14 @@ export default function RegisterView() {
   const [submitting, setSubmitting] = useState<MovementType | null>(null);
   const [showIncomeForm, setShowIncomeForm] = useState(true);
   const [showExpenseForm, setShowExpenseForm] = useState(true);
-   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [editingMovement, setEditingMovement] = useState<{ id: string; type: MovementType } | null>(null);
 
-  async function handleSubmit(e: FormEvent, form: MovementFormState, setForm: (f: MovementFormState) => void) 
-  {
+  async function handleSubmit(
+    e: FormEvent,
+    form: MovementFormState,
+    setForm: (f: MovementFormState) => void
+  ) {
     e.preventDefault();
 
     const rawAmount = Number(form.amount.replace(",", "."));
@@ -49,24 +53,44 @@ export default function RegisterView() {
     const date = form.date || new Date().toISOString().slice(0, 10);
     const month = date.slice(0, 7);
 
-    const movement = {
-      id: String(Date.now()),
+    const isEditing = editingMovement && editingMovement.type === form.type;
+
+    const baseExisting = isEditing
+      ? (form.type === "income" ? state.incomes : state.expenses).find(
+          (m: any) => String(m.id) === editingMovement!.id
+        )
+      : null;
+
+    const movement: any = {
+      ...(baseExisting || {}),
+      id: String(baseExisting?.id ?? editingMovement?.id ?? Date.now()),
+      type: form.type,
       description: form.description.trim(),
       category: form.category.trim(),
       amount: rawAmount,
       month,
       date,
-      createdAt: new Date().toISOString()
+      createdAt: baseExisting?.createdAt ?? new Date().toISOString()
     };
-    
+
     try {
       setSubmitting(form.type);
       if (form.type === "income") {
-        await actions.addIncome(movement);
+        if (isEditing) {
+          await (actions as any).updateIncome(movement);
+        } else {
+          await actions.addIncome(movement);
+        }
       } else {
-        await actions.addExpense(movement);
+        if (isEditing) {
+          await (actions as any).updateExpense(movement);
+        } else {
+          await actions.addExpense(movement);
+        }
       }
+
       setForm(createEmptyForm(form.type));
+      setEditingMovement(null);
     } catch (err) {
       console.error(err);
       alert("Error al guardar el movimiento. Revisa la consola para más detalles.");
@@ -75,12 +99,41 @@ export default function RegisterView() {
     }
   }
 
+  async function handleDelete(tx: MonthTransactionRow) {
+    const confirmed = window.confirm("¿Eliminar este movimiento? Esta acción no se puede deshacer.");
+    if (!confirmed) return;
+
+    try {
+      if (tx.type === "income") {
+        await (actions as any).deleteIncome(tx.id);
+      } else {
+        await (actions as any).deleteExpense(tx.id);
+      }
+
+      if (editingMovement && editingMovement.id === tx.id && editingMovement.type === tx.type) {
+        handleCancelEdit(tx.type);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el movimiento. Revisa la consola para más detalles.");
+    }
+  }
+
+  function handleCancelEdit(type: MovementType) {
+    setEditingMovement(null);
+    if (type === "income") {
+      setIncomeForm(createEmptyForm("income"));
+    } else {
+      setExpenseForm(createEmptyForm("expense"));
+    }
+  }
+
   const monthTransactions: MonthTransactionRow[] = useMemo(() => {
     const month = state.currentMonth;
     const incomes = (state.incomes || [])
       .filter((i: any) => i.month === month)
       .map((i: any) => ({
-        id: String(i.id ?? i.createdAt ?? Date.now()),
+        id: String(i.id),
         type: "income" as const,
         description: i.description ?? "",
         category: i.category ?? "",
@@ -91,7 +144,7 @@ export default function RegisterView() {
     const expenses = (state.expenses || [])
       .filter((e: any) => e.month === month)
       .map((e: any) => ({
-        id: String(e.id ?? e.createdAt ?? Date.now()),
+        id: String(e.id),
         type: "expense" as const,
         description: e.description ?? "",
         category: e.category ?? "",
@@ -128,13 +181,42 @@ export default function RegisterView() {
     return { income, expenses, balance };
   }, [filteredTransactions]);
 
+  function handleEdit(tx: MonthTransactionRow) {
+    const date = tx.date || new Date().toISOString().slice(0, 10);
+    const dateOnly = date.slice(0, 10);
+
+    setEditingMovement({ id: tx.id, type: tx.type });
+
+    if (tx.type === "income") {
+      setShowIncomeForm(true);
+      setIncomeForm(prev => ({
+        ...prev,
+        type: "income",
+        description: tx.description,
+        category: tx.category,
+        amount: String(tx.amount),
+        date: dateOnly
+      }));
+    } else {
+      setShowExpenseForm(true);
+      setExpenseForm(prev => ({
+        ...prev,
+        type: "expense",
+        description: tx.description,
+        category: tx.category,
+        amount: String(tx.amount),
+        date: dateOnly
+      }));
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100">
-              Registrar ingreso
+              Ingresos
             </h2>
             <button
               type="button"
@@ -153,6 +235,8 @@ export default function RegisterView() {
                 setIncomeForm(prev => ({ ...prev, [field]: value }))
               }
               onSubmit={e => handleSubmit(e, incomeForm, setIncomeForm)}
+              isEditing={editingMovement?.type === "income"}
+              onCancelEdit={() => handleCancelEdit("income")}
             />
           )}
         </section>
@@ -160,7 +244,7 @@ export default function RegisterView() {
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100">
-              Registrar gasto
+              Gastos
             </h2>
             <button
               type="button"
@@ -179,6 +263,8 @@ export default function RegisterView() {
                 setExpenseForm(prev => ({ ...prev, [field]: value }))
               }
               onSubmit={e => handleSubmit(e, expenseForm, setExpenseForm)}
+              isEditing={editingMovement?.type === "expense"}
+              onCancelEdit={() => handleCancelEdit("expense")}
             />
           )}
         </section>
@@ -248,7 +334,11 @@ export default function RegisterView() {
           </div>
         </div>
 
-        <MonthTransactionsTable transactions={filteredTransactions} />
+        <MonthTransactionsTable
+          transactions={filteredTransactions}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </section>
     </div>
   );

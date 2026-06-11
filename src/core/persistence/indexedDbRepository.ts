@@ -19,6 +19,18 @@ function getAllFromStore<T>(storeName: string): Promise<T[]> {
   });
 }
 
+function deleteFromStore(storeName: string, key: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    try {
+      const req = getStore(storeName, "readwrite").delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 function putInStore(storeName: string, value: any): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
@@ -67,6 +79,16 @@ export const indexedDbRepository: Repository = {
   async saveExpense(movement: Movement): Promise<void> {
     await ensureDBOpened();
     await putInStore("expenses", movement);
+  },
+
+  async deleteIncome(id: string): Promise<void> {
+    await ensureDBOpened();
+    await deleteFromStore("incomes", id);
+  },
+
+  async deleteExpense(id: string): Promise<void> {
+    await ensureDBOpened();
+    await deleteFromStore("expenses", id);
   },
 
   async saveBudget(budget: Budget): Promise<void> {

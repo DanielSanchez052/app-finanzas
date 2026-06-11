@@ -11,10 +11,14 @@ export interface MonthTransactionRow {
 
 interface MonthTransactionsTableProps {
   transactions: MonthTransactionRow[];
+  onEdit?: (tx: MonthTransactionRow) => void;
+  onDelete?: (tx: MonthTransactionRow) => void;
 }
 
 export const MonthTransactionsTable: FC<MonthTransactionsTableProps> = ({
-  transactions
+  transactions,
+  onEdit,
+  onDelete
 }) => {
   return (
     <section className="bg-slate-900/60 border border-slate-800 rounded-lg p-4 mt-6">
@@ -84,8 +88,22 @@ export const MonthTransactionsTable: FC<MonthTransactionsTableProps> = ({
                     })}
                   </td>
                   <td className="py-2 px-3 align-middle text-right text-slate-500 text-[11px]">
-                    {/* Placeholder para futuras acciones (editar / eliminar) */}
-                    Próximamente
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit?.(tx)}
+                        className="inline-flex items-center px-2 py-0.5 rounded border border-slate-600 text-slate-200 hover:bg-slate-800"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete?.(tx)}
+                        className="inline-flex items-center px-2 py-0.5 rounded border border-red-700 text-red-300 hover:bg-red-900/60"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

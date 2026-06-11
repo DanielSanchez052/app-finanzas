@@ -2,7 +2,8 @@ import type {
   CoreState,
   Alert,
   TopBudgetItem,
-  Budget
+  Budget,
+  Movement
 } from "../domain/types";
 import type { CloudProviderId, CloudProviderUser } from "../cloud/types";
 import type { CoreStore } from "../state/store";
@@ -37,6 +38,12 @@ export interface AppCore {
   addMovement(input: NewMovementInput): Promise<void>;
   addIncome(input: NewIncomeInput): Promise<void>;
   addExpense(input: NewExpenseInput): Promise<void>;
+  updateMovement(movement: Movement): Promise<void>;
+  updateIncome(movement: Movement): Promise<void>;
+  updateExpense(movement: Movement): Promise<void>;
+  deleteMovement(id: string, type: "income" | "expense"): Promise<void>;
+  deleteIncome(id: string): Promise<void>;
+  deleteExpense(id: string): Promise<void>;
   saveBudget(budget: Budget): Promise<void>;
   setCurrentMonth(month: string): void;
   clearLocalData(): Promise<void>;
@@ -131,6 +138,71 @@ export function createAppCore(deps: AppCoreDeps): AppCore {
 
   async function addExpense(input: NewExpenseInput): Promise<void> {
     return addMovement({ ...input, type: "expense" });
+  }
+
+  async function updateMovement(movement: Movement): Promise<void> {
+    if (!movement.id) {
+      throw new Error("Movimiento inválido: falta id para actualizar.");
+    }
+
+    const normalized: Movement = {
+      ...movement,
+      description: movement.description.trim(),
+      category: movement.category.trim()
+    };
+
+    if (!normalized.description || !normalized.category || !normalized.amount) {
+      throw new Error("Movimiento inválido: faltan campos requeridos.");
+    }
+
+    if (normalized.type === "income") {
+      await repository.saveIncome(normalized);
+      store.setState(prev => ({
+        ...prev,
+        incomes: prev.incomes.map(m => (m.id === normalized.id ? normalized : m))
+      }));
+    } else {
+      await repository.saveExpense(normalized);
+      store.setState(prev => ({
+        ...prev,
+        expenses: prev.expenses.map(m => (m.id === normalized.id ? normalized : m))
+      }));
+    }
+  }
+
+  async function updateIncome(movement: Movement): Promise<void> {
+    return updateMovement({ ...movement, type: "income" });
+  }
+
+  async function updateExpense(movement: Movement): Promise<void> {
+    return updateMovement({ ...movement, type: "expense" });
+  }
+
+  async function deleteMovement(id: string, type: "income" | "expense"): Promise<void> {
+    const normalizedId = String(id);
+    if (!normalizedId) return;
+
+    if (type === "income") {
+      await repository.deleteIncome(normalizedId);
+      store.setState(prev => ({
+        ...prev,
+        incomes: prev.incomes.filter(m => m.id !== normalizedId)
+      }));
+    } else {
+      await repository.deleteExpense(normalizedId);
+      store.setState(prev => ({
+        ...prev,
+        expenses: prev.expenses.filter(m => m.id !== normalizedId)
+      }));
+    }
+  }
+
+  async function deleteIncome(id: string): Promise<void> {
+    return deleteMovement(id, "income");
+  }
+
+  async function deleteExpense(id: string): Promise<void> {
+    return deleteMovement(id, "expense");
   }
 
   async function saveBudget(budget: Budget): Promise<void> {
@@ -249,6 +321,12 @@ export function createAppCore(deps: AppCoreDeps): AppCore {
     addMovement,
     addIncome,
     addExpense,
+    updateMovement,
+    updateIncome,
+    updateExpense,
+    deleteMovement,
+    deleteIncome,
+    deleteExpense,
     saveBudget,
     clearLocalData,
     setCurrentMonth,

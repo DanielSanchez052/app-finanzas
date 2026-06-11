@@ -18,6 +18,10 @@ export interface CoreState {
 export interface CoreActions {
   addIncome: (...args: any[]) => Promise<void>;
   addExpense: (...args: any[]) => Promise<void>;
+  updateIncome: (...args: any[]) => Promise<void>;
+  updateExpense: (...args: any[]) => Promise<void>;
+  deleteIncome: (...args: any[]) => Promise<void>;
+  deleteExpense: (...args: any[]) => Promise<void>;
   saveBudget: (...args: any[]) => Promise<void>;
   setCurrentMonth: (month: string) => void;
   clearLocalData: () => Promise<void>;
@@ -51,6 +55,10 @@ const defaultValue: AppContextValue = {
   actions: {
     addIncome: async () => {},
     addExpense: async () => {},
+    updateIncome: async () => {},
+    updateExpense: async () => {},
+    deleteIncome: async () => {},
+    deleteExpense: async () => {},
     saveBudget: async () => {},
     setCurrentMonth: () => {},
     clearLocalData: async () => {}

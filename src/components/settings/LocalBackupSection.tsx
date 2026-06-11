@@ -60,11 +60,12 @@ export const LocalBackupSection: FC<LocalBackupSectionProps> = ({
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="block text-xs text-slate-300">Formato</label>
+          <label className="block text-xs text-slate-300" htmlFor="backup-format">Formato</label>
           <select
             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
             value={backupFormat}
             onChange={handleFormatChange}
+            id="backup-format"
           >
             <option value="json">json</option>
             <option value="csv">csv</option>
@@ -72,11 +73,12 @@ export const LocalBackupSection: FC<LocalBackupSectionProps> = ({
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs text-slate-300">Data</label>
+          <label className="block text-xs text-slate-300" htmlFor="backup-section">Data</label>
           <select
             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
             value={backupSection}
             onChange={handleSectionChange}
+            id="backup-section"
           >
             <option value="all">Todos</option>
             <option value="expenses">Solo gastos</option>

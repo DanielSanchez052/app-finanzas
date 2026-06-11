@@ -36,11 +36,12 @@ export const CloudPersistenceSection: FC<CloudPersistenceSectionProps> = ({
 
       <div className="space-y-3">
         <div className="space-y-1">
-          <label className="block text-xs text-slate-300">Almacenamiento</label>
+          <label className="block text-xs text-slate-300" htmlFor="storage-provider">Almacenamiento</label>
           <select
             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm max-w-xs"
             value={storageProvider}
             onChange={handleProviderSelectChange}
+            id="storage-provider"
           >
             <option value="none">Ninguno</option>
             <option value="google-drive">Google Drive</option>
@@ -53,9 +54,10 @@ export const CloudPersistenceSection: FC<CloudPersistenceSectionProps> = ({
             <h3 className="text-sm font-medium">Configuración Google Drive</h3>
             <div className="space-y-2">
               <div className="space-y-1">
-                <label className="block text-xs text-slate-300">Client ID</label>
+                <label className="block text-xs text-slate-300" htmlFor="google-client-id">Client ID</label>
                 <input
                   type="text"
+                  id="google-client-id"
                   value={googleClientId}
                   onChange={e => onGoogleClientIdChange(e.target.value)}
                   placeholder="tu-client-id.apps.googleusercontent.com"
@@ -63,9 +65,10 @@ export const CloudPersistenceSection: FC<CloudPersistenceSectionProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-xs text-slate-300">API Key</label>
+                <label className="block text-xs text-slate-300" htmlFor="google-api-key">API Key</label>
                 <input
                   type="text"
+                  id="google-api-key"
                   value={googleApiKey}
                   onChange={e => onGoogleApiKeyChange(e.target.value)}
                   placeholder="tu API key"
