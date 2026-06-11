@@ -55,8 +55,8 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
                 </td>
                 <td className="py-2 px-3 align-middle text-right text-slate-200">
                   {row.spent.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                   })}
                 </td>
                 <td className="py-2 px-3 align-middle">

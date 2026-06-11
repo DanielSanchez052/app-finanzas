@@ -68,6 +68,17 @@ export default function BudgetsView() {
     [rows, state]
   );
 
+  const totals = useMemo(() => {
+    const totalBudgeted = rowsWithStats.reduce((sum, row) => {
+      const n = Number(String(row.amount).replace(",", "."));
+      return sum + (Number.isFinite(n) ? n : 0);
+    }, 0);
+
+    const totalSpent = rowsWithStats.reduce((sum, row) => sum + (row.spent || 0), 0);
+
+    return { totalBudgeted, totalSpent, remaining: totalBudgeted - totalSpent };
+  }, [rowsWithStats]);
+
   const handleAddCategory = async () => {
     const category = newCategory.trim();
     const amount = Number(newAmount.replace(",", "."));
@@ -108,6 +119,38 @@ export default function BudgetsView() {
           }
           onSave={handleSave}
         />
+        <div className="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-300 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <span className="font-semibold">Total presupuestado:</span>{" "}
+            <span>
+              $
+              {totals.totalBudgeted.toLocaleString("es-ES", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              })}
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold">Total gastado (mes actual):</span>{" "}
+            <span>
+              $
+              {totals.totalSpent.toLocaleString("es-ES", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              })}
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold">Diferencia:</span>{" "}
+            <span className={totals.remaining < 0 ? "text-red-400" : "text-emerald-400"}>
+              $
+              {totals.remaining.toLocaleString("es-ES", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              })}
+            </span>
+          </div>
+        </div>
       </section>
 
       <NewBudgetCategoryForm
