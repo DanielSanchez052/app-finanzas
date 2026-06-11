@@ -1,16 +1,23 @@
 # Dependencias (si en el futuro se agregan)
 node_modules/
+package-lock.json
 
 # Build / dist (por si se empaqueta luego)
 dist/
 build/
 
+# generated types
+.astro/
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Archivos temporales
 *.tmp
@@ -28,3 +35,10 @@ backup-*.json
 .vscode/
 .idea/
 *.swp
+
+# environment variables
+.env
+.env.production
+
+# jetbrains setting folder
+.idea/
