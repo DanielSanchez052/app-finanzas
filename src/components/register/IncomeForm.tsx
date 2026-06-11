@@ -67,6 +67,15 @@ export const IncomeForm: FC<IncomeFormProps> = ({
             onChange={e => onChangeField("amount", e.target.value)}
             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"
           />
+          {form.amount && !Number.isNaN(Number(String(form.amount).replace(",", "."))) && (
+            <p className="text-[10px] text-slate-400">
+              Formateado: $
+              {Number(String(form.amount).replace(",", ".")).toLocaleString("es-ES", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              })}
+            </p>
+          )}
         </div>
 
         <button
